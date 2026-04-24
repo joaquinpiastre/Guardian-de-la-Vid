@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "guardian-vid-temp",
-    "slug": "guardian-vid-temp",
+    "name": "Guardián de la Vid",
+    "slug": "guardian-de-la-vid",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,21 +10,46 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1B4332"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Guardián de la Vid usa la cámara para fotografiar hojas de vid y analizarlas solo en su dispositivo.",
+        "NSPhotoLibraryUsageDescription": "Permite elegir una imagen existente de la galería para el análisis local.",
+        "NSMicrophoneUsageDescription": "El micrófono puede solicitarse por el subsistema de cámara; no se graba audio en esta app."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1B4332"
       },
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ],
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "La app necesita la cámara para capturar hojas de vid y analizarlas sin conexión."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La app accede a sus fotos solo para cargar una imagen y analizarla en el teléfono."
+        }
+      ],
+      "expo-sqlite"
+    ]
   }
 }
