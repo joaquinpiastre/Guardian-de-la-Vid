@@ -10,6 +10,7 @@ interface DiseaseBadgeProps {
 
 const BADGE_COLORS: Record<DiseaseLabel, { bg: string; fg: string }> = {
   'Hoja sana': { bg: colors.primaryMuted, fg: colors.primaryDark },
+  'No es hoja de vid': { bg: '#E5E7EB', fg: colors.textMuted },
   Mildiu: { bg: '#EDE9FE', fg: '#5B21B6' },
   Oídio: { bg: '#FEF3C7', fg: '#92400E' },
   'Podredumbre bacteriana': { bg: '#FEE2E2', fg: colors.danger },

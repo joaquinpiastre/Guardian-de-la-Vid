@@ -28,10 +28,16 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
       ],
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.joacopiastre.guardiandelavid"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -49,7 +55,8 @@
           "photosPermission": "La app accede a sus fotos solo para cargar una imagen y analizarla en el teléfono."
         }
       ],
-      "expo-sqlite"
+      "expo-sqlite",
+      "react-native-fast-tflite"
     ]
   }
 }

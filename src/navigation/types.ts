@@ -7,8 +7,12 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 export type RootStackParamList = {
   Home: undefined;
   Camera: undefined;
-  /** URI local de la imagen capturada o elegida desde galería */
-  Result: { imageUri: string };
+  /**
+   * URI local de la imagen capturada o elegida desde galería.
+   * `additionalUris` contiene las imágenes extra cuando se usa el modo
+   * de análisis múltiple (ensemble de 2–3 fotos).
+   */
+  Result: { imageUri: string; additionalUris?: string[] };
   History: undefined;
   Detail: { id: string };
 };

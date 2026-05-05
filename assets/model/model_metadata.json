@@ -1,0 +1,31 @@
+{
+  "model_name": "guardian_vid",
+  "exported_at_utc": "2026-04-24T19:36:12.798191+00:00",
+  "input": {
+    "shape": [
+      1,
+      224,
+      224,
+      3
+    ],
+    "dtype": "float32",
+    "normalization": {
+      "range": [
+        0.0,
+        1.0
+      ],
+      "note": "La app debe escalar pixel RGB a [0,1] antes de inferencia."
+    }
+  },
+  "output": {
+    "type": "softmax_probabilities",
+    "num_classes": 4,
+    "labels_file": "labels.txt"
+  },
+  "labels": [
+    "0_sana",
+    "1_mildiu",
+    "2_oidio",
+    "3_bacteriana"
+  ]
+}

@@ -8,6 +8,8 @@ import type { DiseaseLabel, RiskLevel } from '../types/diagnosis';
 const RECOMMENDATIONS: Record<DiseaseLabel, string> = {
   'Hoja sana':
     'No se observan signos evidentes de patología en la imagen analizada. Mantenga monitoreo visual periódico en cuadrillas cercanas.',
+  'No es hoja de vid':
+    'La imagen no muestra una hoja de vid reconocible (color y forma de follaje). Fotografíe una sola hoja centrada, con buena luz y sin objetos de fondo que confundan al sistema.',
   Mildiu:
     'Revise otras hojas y racimos; valore aplicación preventiva o curativa según programa fitosanitario autorizado y condiciones de humedad.',
   Oídio:
@@ -18,6 +20,7 @@ const RECOMMENDATIONS: Record<DiseaseLabel, string> = {
 
 const RISK_BY_LABEL: Record<DiseaseLabel, RiskLevel> = {
   'Hoja sana': 'Bajo',
+  'No es hoja de vid': 'Bajo',
   Mildiu: 'Alto',
   Oídio: 'Moderado',
   'Podredumbre bacteriana': 'Alto',

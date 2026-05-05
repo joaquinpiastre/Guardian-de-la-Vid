@@ -8,7 +8,9 @@ export type DiseaseLabel =
   | 'Hoja sana'
   | 'Mildiu'
   | 'Oídio'
-  | 'Podredumbre bacteriana';
+  | 'Podredumbre bacteriana'
+  /** No sale del modelo: se aplica un filtro de escena (verdor) cuando la imagen no parece follaje de vid */
+  | 'No es hoja de vid';
 
 /** Nivel de riesgo agronómico simplificado para el viticultor */
 export type RiskLevel = 'Bajo' | 'Moderado' | 'Alto';
@@ -21,6 +23,26 @@ export type ConfidenceCategory =
   | 'Diagnóstico confiable'
   | 'Diagnóstico probable'
   | 'Diagnóstico no concluyente';
+
+/**
+ * Métricas de calidad de la imagen capturada, calculadas sobre el tensor 224×224
+ * antes de la inferencia. Permite advertir al usuario sobre fotos problemáticas
+ * sin bloquear el diagnóstico.
+ */
+export interface ImageQualityInfo {
+  /** True si la imagen tiene bajo contraste de luminancia (posible desenfoque). */
+  isBlurry: boolean;
+  /** True si la luminancia promedio es muy baja (foto demasiado oscura). */
+  isDark: boolean;
+  /** True si la luminancia promedio es muy alta (sobreexpuesta / lavada). */
+  isOverexposed: boolean;
+  /** Desviación estándar de la luminancia en [0, 1]. Mayor = más nítida. */
+  sharpnessScore: number;
+  /** Luminancia promedio en [0, 1]. Referencia: 0.12–0.88 es rango aceptable. */
+  avgBrightness: number;
+  /** Mensaje de advertencia legible por el usuario, o null si la calidad es aceptable. */
+  warning: string | null;
+}
 
 /** Registro almacenado en la base de datos local */
 export interface Diagnosis {
@@ -45,6 +67,8 @@ export interface DiagnosisAnalysisResult {
   riskLevel: RiskLevel;
   recommendation: string;
   confidenceCategory: ConfidenceCategory;
-  /** URI de la imagen redimensionada/normalizada usada como “input” del modelo */
+  /** URI de la imagen redimensionada/normalizada usada como "input" del modelo */
   processedImageUri: string;
+  /** Calidad de la imagen analizada; undefined si no se pudo calcular. */
+  qualityInfo?: ImageQualityInfo;
 }

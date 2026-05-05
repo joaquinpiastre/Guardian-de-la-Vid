@@ -1,0 +1,4 @@
+0_sana
+1_mildiu
+2_oidio
+3_bacteriana

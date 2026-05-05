@@ -5,6 +5,7 @@ import {
   Alert,
   FlatList,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -32,12 +33,35 @@ function formatDate(iso: string): string {
   }
 }
 
+function escapeCsvField(value: string): string {
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function buildCsvContent(items: Diagnosis[]): string {
+  const headers = ['ID', 'Fecha', 'Diagnóstico', 'Confianza (%)', 'Riesgo', 'Recomendación'];
+  const rows = items.map((item) => [
+    item.id,
+    item.createdAt,
+    item.label,
+    (item.confidence * 100).toFixed(1),
+    item.riskLevel,
+    item.recommendation,
+  ]);
+  const lines = [headers, ...rows].map((row) => row.map(escapeCsvField).join(','));
+  return lines.join('\n');
+}
+
 /**
- * Lista cronológica de diagnósticos SQLite con acceso a detalle y eliminación local.
+ * Lista cronológica de diagnósticos SQLite con acceso a detalle, eliminación y exportación CSV.
  */
 export function HistoryScreen({ navigation }: HistoryScreenProps) {
   const [items, setItems] = useState<Diagnosis[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     const rows = await listDiagnoses();
@@ -74,6 +98,25 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
     );
   };
 
+  const exportCsv = async () => {
+    if (items.length === 0) {
+      Alert.alert('Sin datos', 'No hay diagnósticos para exportar.');
+      return;
+    }
+    setExporting(true);
+    try {
+      const csvContent = buildCsvContent(items);
+      await Share.share({
+        title: 'Historial Guardian Vid',
+        message: csvContent,
+      });
+    } catch {
+      Alert.alert('Error', 'No se pudo exportar el historial.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: Diagnosis }) => {
     const pct = Math.round(item.confidence * 100);
     return (
@@ -104,6 +147,30 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
+      {/* Barra de herramientas superior */}
+      {items.length > 0 ? (
+        <View style={styles.toolbar}>
+          <Text style={[typography.caption, styles.toolbarCount]}>
+            {items.length} diagnóstico{items.length !== 1 ? 's' : ''}
+          </Text>
+          <TouchableOpacity
+            style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
+            onPress={() => void exportCsv()}
+            disabled={exporting}
+            accessibilityLabel="Exportar historial como CSV"
+          >
+            <MaterialCommunityIcons
+              name="export-variant"
+              size={18}
+              color={exporting ? colors.textMuted : colors.primaryDark}
+            />
+            <Text style={[typography.caption, exporting ? styles.exportLabelMuted : styles.exportLabel]}>
+              Exportar CSV
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+
       <FlatList
         data={items}
         keyExtractor={(it) => it.id}
@@ -115,7 +182,7 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
             <MaterialCommunityIcons name="clipboard-text-off-outline" size={48} color={colors.textMuted} />
             <Text style={[typography.body, styles.emptyText]}>Aún no hay diagnósticos guardados.</Text>
             <Text style={[typography.caption, styles.emptyHint]}>
-              Realice un análisis desde la pantalla principal y pulse “Guardar diagnóstico”.
+              Realice un análisis desde la pantalla principal y pulse "Guardar diagnóstico".
             </Text>
           </View>
         }
@@ -128,6 +195,41 @@ const styles = StyleSheet.create({
   safe: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.white,
+  },
+  toolbarCount: {
+    color: colors.textMuted,
+  },
+  exportBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderRadius: radii.sm,
+    backgroundColor: colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  exportBtnDisabled: {
+    opacity: 0.5,
+  },
+  exportLabel: {
+    color: colors.primaryDark,
+    fontWeight: '600',
+  },
+  exportLabelMuted: {
+    color: colors.textMuted,
+    fontWeight: '600',
   },
   list: {
     padding: spacing.md,
