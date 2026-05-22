@@ -5,6 +5,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
  * Tipar `navigation` y `route` en cada pantalla evita errores al pasar parámetros.
  */
 export type RootStackParamList = {
+  Login: undefined;
   Home: undefined;
   Camera: undefined;
   /**
@@ -17,6 +18,7 @@ export type RootStackParamList = {
   Detail: { id: string };
 };
 
+export type LoginScreenProps = NativeStackScreenProps<RootStackParamList, 'Login'>;
 export type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
 export type CameraScreenProps = NativeStackScreenProps<RootStackParamList, 'Camera'>;
 export type ResultScreenProps = NativeStackScreenProps<RootStackParamList, 'Result'>;

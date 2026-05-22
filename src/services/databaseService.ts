@@ -1,16 +1,8 @@
 import * as SQLite from 'expo-sqlite';
 import { Directory, File, Paths } from 'expo-file-system';
 
-import { SQL_CREATE_DIAGNOSES, TABLE_DIAGNOSES } from '../database/schema';
-import type { Diagnosis, DiseaseLabel } from '../types/diagnosis';
-
-/**
- * Acceso a datos local con SQLite (sin backend).
- * Gestiona ciclo de vida de la BD y persistencia de imágenes en el directorio de documentos.
- *
- * Nota (Expo SDK 54+): se usa la API moderna de `expo-file-system` (`File` / `Directory` / `Paths`)
- * en lugar de `documentDirectory` + `copyAsync` deprecados.
- */
+import { SQL_CREATE_DIAGNOSES, SQL_MIGRATIONS, TABLE_DIAGNOSES } from '../database/schema';
+import type { Diagnosis, DiseaseLabel, SyncStatus } from '../types/diagnosis';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
@@ -22,22 +14,24 @@ async function getDb(): Promise<SQLite.SQLiteDatabase> {
   if (!dbInstance) {
     dbInstance = await SQLite.openDatabaseAsync('guardian_vid.sqlite');
     await dbInstance.execAsync(SQL_CREATE_DIAGNOSES);
+    // Migraciones para installs existentes (columnas nuevas)
+    for (const sql of SQL_MIGRATIONS) {
+      try {
+        await dbInstance.execAsync(sql);
+      } catch {
+        // "duplicate column name" — idempotente, se ignora
+      }
+    }
   }
   return dbInstance;
 }
 
-/**
- * Inicializa la base al arranque de la app (idempotente).
- */
 export async function initDatabase(): Promise<void> {
   await getDb();
 }
 
 const IMAGES_DIR = 'guardian_vid_images';
 
-/**
- * Garantiza la carpeta persistente donde se copian las imágenes asociadas a cada diagnóstico.
- */
 function ensureImagesDirectory(): Directory | null {
   try {
     const dir = new Directory(Paths.document, IMAGES_DIR);
@@ -50,14 +44,9 @@ function ensureImagesDirectory(): Directory | null {
   }
 }
 
-/**
- * Copia la imagen analizada a almacenamiento persistente y devuelve su nueva URI (`file://`).
- */
 export async function persistDiagnosisImage(sourceUri: string, id: string): Promise<string> {
   const dir = ensureImagesDirectory();
-  if (!dir) {
-    return sourceUri;
-  }
+  if (!dir) return sourceUri;
   try {
     const sourceFile = new File(sourceUri);
     const destFile = new File(dir, `${id}.jpg`);
@@ -77,18 +66,27 @@ function parseRow(row: Record<string, unknown>): Diagnosis {
     riskLevel: row.riskLevel as Diagnosis['riskLevel'],
     recommendation: String(row.recommendation),
     createdAt: String(row.createdAt),
+    userId: row.userId != null ? String(row.userId) : undefined,
+    syncStatus: (row.syncStatus as SyncStatus | null) ?? 'local',
+    cloudId: row.cloudId != null ? String(row.cloudId) : undefined,
   };
 }
 
-export async function saveDiagnosis(input: Omit<Diagnosis, 'id' | 'createdAt'> & { id?: string }): Promise<Diagnosis> {
+export async function saveDiagnosis(
+  input: Omit<Diagnosis, 'id' | 'createdAt'> & { id?: string },
+): Promise<Diagnosis> {
   const db = await getDb();
   const id = input.id ?? generateId();
   const createdAt = new Date().toISOString();
   const persistentUri = await persistDiagnosisImage(input.imageUri, id);
+  const syncStatus: SyncStatus = input.syncStatus ?? 'local';
+  const userId = input.userId ?? null;
 
   await db.runAsync(
-    `INSERT INTO ${TABLE_DIAGNOSES} (id, imageUri, label, confidence, riskLevel, recommendation, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [id, persistentUri, input.label, input.confidence, input.riskLevel, input.recommendation, createdAt],
+    `INSERT INTO ${TABLE_DIAGNOSES}
+       (id, imageUri, label, confidence, riskLevel, recommendation, createdAt, userId, syncStatus)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [id, persistentUri, input.label, input.confidence, input.riskLevel, input.recommendation, createdAt, userId, syncStatus],
   );
 
   return {
@@ -99,6 +97,8 @@ export async function saveDiagnosis(input: Omit<Diagnosis, 'id' | 'createdAt'> &
     riskLevel: input.riskLevel,
     recommendation: input.recommendation,
     createdAt,
+    userId: input.userId,
+    syncStatus,
   };
 }
 
@@ -116,10 +116,27 @@ export async function getDiagnosisById(id: string): Promise<Diagnosis | null> {
     `SELECT * FROM ${TABLE_DIAGNOSES} WHERE id = ?`,
     [id],
   );
-  if (!row) {
-    return null;
-  }
+  if (!row) return null;
   return parseRow(row);
+}
+
+/** Devuelve todos los diagnósticos de un usuario que aún no se subieron a la nube. */
+export async function listPendingDiagnoses(userId: string): Promise<Diagnosis[]> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<Record<string, unknown>>(
+    `SELECT * FROM ${TABLE_DIAGNOSES} WHERE syncStatus = 'pending' AND userId = ? ORDER BY datetime(createdAt) ASC`,
+    [userId],
+  );
+  return rows.map(parseRow);
+}
+
+/** Marca un diagnóstico como sincronizado con la nube. */
+export async function markDiagnosisSynced(id: string): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `UPDATE ${TABLE_DIAGNOSES} SET syncStatus = 'synced' WHERE id = ?`,
+    [id],
+  );
 }
 
 export async function deleteDiagnosisById(id: string): Promise<void> {
@@ -130,11 +147,9 @@ export async function deleteDiagnosisById(id: string): Promise<void> {
   if (existing?.imageUri.startsWith('file:')) {
     try {
       const file = new File(existing.imageUri);
-      if (file.exists) {
-        file.delete();
-      }
+      if (file.exists) file.delete();
     } catch {
-      // Si el archivo ya no existe, no bloqueamos la UX
+      // Archivo ya eliminado, no bloqueamos la UX
     }
   }
 }

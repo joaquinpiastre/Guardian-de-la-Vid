@@ -10,18 +10,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import NetInfo from '@react-native-community/netinfo';
 
 import { DiagnosisCard } from '../components/DiagnosisCard';
 import { HeatmapViewer } from '../components/HeatmapViewer';
 import { ImagePreview } from '../components/ImagePreview';
 import { colors, radii, spacing, typography } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 import type { ResultScreenProps } from '../navigation/types';
 import {
   runDiagnosisFromImageUri,
   runEnsembleDiagnosis,
   type DiagnosisPipelineResult,
 } from '../services/diagnosisService';
-import { saveDiagnosis } from '../services/databaseService';
+import { saveDiagnosis, markDiagnosisSynced } from '../services/databaseService';
+import { uploadDiagnosis } from '../services/cloudService';
 import { composeGradCamOverlay } from '../services/gradcamService';
 
 /**
@@ -31,6 +34,7 @@ import { composeGradCamOverlay } from '../services/gradcamService';
 export function ResultScreen({ navigation, route }: ResultScreenProps) {
   const { imageUri, additionalUris } = route.params;
   const isEnsemble = Array.isArray(additionalUris) && additionalUris.length > 0;
+  const { user } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,15 +101,48 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
     if (!analysis) return;
     setSaving(true);
     try {
-      await saveDiagnosis({
+      const netState = await NetInfo.fetch();
+      const isOnline = !!(netState.isConnected && netState.isInternetReachable);
+
+      // Si hay usuario y conexión: guardar local + intentar subir a la nube
+      // Si hay usuario pero sin conexión: guardar local con syncStatus='pending'
+      // Sin usuario: guardar solo local
+      const syncStatus = user ? (isOnline ? 'pending' : 'pending') : 'local';
+
+      const diagnosis = await saveDiagnosis({
         imageUri,
         label: analysis.label,
         confidence: analysis.confidence,
         riskLevel: analysis.riskLevel,
         recommendation: analysis.recommendation,
+        userId: user?.uid,
+        syncStatus,
       });
-      setSaved(true);
-      Alert.alert('Guardado', 'El diagnóstico se almacenó en el historial local.');
+
+      if (user && isOnline) {
+        try {
+          await uploadDiagnosis(user.uid, diagnosis);
+          await markDiagnosisSynced(diagnosis.id);
+          setSaved(true);
+          Alert.alert('Guardado en la nube', 'El diagnóstico se sincronizó correctamente.');
+        } catch {
+          // Upload falló pero el registro local ya está guardado como 'pending'
+          setSaved(true);
+          Alert.alert(
+            'Guardado localmente',
+            'No se pudo subir a la nube ahora. Se sincronizará automáticamente cuando recuperes conexión.',
+          );
+        }
+      } else if (user) {
+        setSaved(true);
+        Alert.alert(
+          'Guardado sin conexión',
+          'Sin conexión a internet. El diagnóstico se guardó en el dispositivo y se sincronizará automáticamente cuando recuperes conexión.',
+        );
+      } else {
+        setSaved(true);
+        Alert.alert('Guardado', 'El diagnóstico se almacenó en el historial local.');
+      }
     } catch {
       Alert.alert('Error', 'No se pudo guardar el diagnóstico.');
     } finally {

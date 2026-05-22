@@ -5,12 +5,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OFFLINE_AI_NOTICE } from '../constants/strings';
 import { colors, radii, spacing, typography } from '../constants/theme';
+import { useAuth } from '../contexts/AuthContext';
 import type { HomeScreenProps } from '../navigation/types';
 
 /**
  * Pantalla de bienvenida: accesos claros al flujo de análisis y al historial.
  */
 export function HomeScreen({ navigation }: HomeScreenProps) {
+  const { user } = useAuth();
+  const displayName = user?.displayName ?? user?.email ?? '';
+
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -21,6 +25,16 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         <Text style={[typography.subtitle, styles.subtitle]}>
           Detección temprana de enfermedades en hojas de vid
         </Text>
+
+        {displayName ? (
+          <View style={styles.userBadge}>
+            <MaterialCommunityIcons name="account-circle-outline" size={18} color={colors.primary} />
+            <Text style={[typography.caption, styles.userTxt]} numberOfLines={1}>
+              {displayName}
+            </Text>
+            <MaterialCommunityIcons name="cloud-check-outline" size={16} color={colors.success} />
+          </View>
+        ) : null}
 
         <View style={styles.notice}>
           <MaterialCommunityIcons name="cloud-off-outline" size={22} color={colors.primary} />
@@ -50,7 +64,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
         </TouchableOpacity>
 
         <Text style={[typography.caption, styles.footer]}>
-          Herramienta de apoyo para viticultores de Mendoza. Sin cuenta ni conexión obligatoria.
+          Herramienta de apoyo para viticultores de Mendoza.{'\n'}
+          Con cuenta: los diagnósticos se sincronizan en la nube automáticamente.
         </Text>
       </ScrollView>
     </SafeAreaView>
@@ -86,6 +101,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.sm,
     lineHeight: 22,
+  },
+  userBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+    alignSelf: 'center',
+    backgroundColor: colors.primaryMuted,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    maxWidth: '90%',
+  },
+  userTxt: {
+    color: colors.primaryDark,
+    fontWeight: '600',
+    flexShrink: 1,
   },
   notice: {
     marginTop: spacing.xl,

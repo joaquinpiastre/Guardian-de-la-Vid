@@ -44,6 +44,9 @@ export interface ImageQualityInfo {
   warning: string | null;
 }
 
+/** Estado de sincronización con la nube */
+export type SyncStatus = 'local' | 'pending' | 'synced';
+
 /** Registro almacenado en la base de datos local */
 export interface Diagnosis {
   id: string;
@@ -54,6 +57,12 @@ export interface Diagnosis {
   riskLevel: RiskLevel;
   recommendation: string;
   createdAt: string;
+  /** UID de Firebase del usuario propietario; undefined si se guardó sin cuenta */
+  userId?: string;
+  /** Estado de sincronización con Firebase Storage + Firestore */
+  syncStatus?: SyncStatus;
+  /** ID del documento en Firestore una vez sincronizado */
+  cloudId?: string;
 }
 
 /**

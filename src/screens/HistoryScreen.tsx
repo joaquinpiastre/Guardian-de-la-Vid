@@ -117,6 +117,26 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
     }
   };
 
+  const renderSyncBadge = (item: Diagnosis) => {
+    if (item.syncStatus === 'synced') {
+      return (
+        <View style={styles.syncBadge}>
+          <MaterialCommunityIcons name="cloud-check-outline" size={14} color={colors.success} />
+          <Text style={[typography.caption, styles.syncTxtSynced]}>En la nube</Text>
+        </View>
+      );
+    }
+    if (item.syncStatus === 'pending') {
+      return (
+        <View style={[styles.syncBadge, styles.syncBadgePending]}>
+          <MaterialCommunityIcons name="cloud-upload-outline" size={14} color={colors.warning} />
+          <Text style={[typography.caption, styles.syncTxtPending]}>Pendiente</Text>
+        </View>
+      );
+    }
+    return null;
+  };
+
   const renderItem = ({ item }: { item: Diagnosis }) => {
     const pct = Math.round(item.confidence * 100);
     return (
@@ -129,6 +149,7 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
           <View style={styles.cardHeader}>
             <MaterialCommunityIcons name="file-document-outline" size={22} color={colors.primaryDark} />
             <Text style={[typography.caption, styles.date]}>{formatDate(item.createdAt)}</Text>
+            {renderSyncBadge(item)}
           </View>
           <Text style={[typography.subtitle, styles.label]}>{item.label}</Text>
           <Text style={[typography.body, styles.conf]}>Confianza: {pct}%</Text>
@@ -296,5 +317,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: colors.textMuted,
     lineHeight: 18,
+  },
+  syncBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginLeft: 'auto',
+  },
+  syncBadgePending: {},
+  syncTxtSynced: {
+    color: colors.success,
+    fontWeight: '600',
+  },
+  syncTxtPending: {
+    color: colors.warning,
+    fontWeight: '600',
   },
 });
