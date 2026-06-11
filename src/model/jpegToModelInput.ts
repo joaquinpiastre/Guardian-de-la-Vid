@@ -1,5 +1,4 @@
 import { decode } from 'jpeg-js';
-import { File } from 'expo-file-system';
 
 import { MODEL_INPUT_SIZE } from '../services/imageProcessor';
 import type { ImageQualityInfo } from '../types/diagnosis';
@@ -47,9 +46,10 @@ function buildQualityWarning(std: number, avg: number): string | null {
  * - Métricas de calidad (nitidez, brillo, sobreexposición).
  */
 export async function jpegUriToTensorAndVegetation(uri: string): Promise<JpegTensorAndVegetation> {
-  const file = new File(uri);
-  const b64 = await file.base64();
-  const bytes = base64ToUint8Array(b64);
+  // fetch con URIs file:// funciona de forma nativa en React Native (Expo Go y builds nativos).
+  const response = await fetch(uri);
+  const buffer = await response.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
   const decoded = decode(bytes, { useTArray: true });
   if (!decoded) {
     throw new Error('No se pudo decodificar el JPEG para inferencia.');
@@ -110,14 +110,4 @@ export async function jpegUriToTensorAndVegetation(uri: string): Promise<JpegTen
 export async function jpegUriToFloat32NHWC01(uri: string): Promise<Float32Array> {
   const { tensor } = await jpegUriToTensorAndVegetation(uri);
   return tensor;
-}
-
-function base64ToUint8Array(b64: string): Uint8Array {
-  const binaryString = globalThis.atob(b64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
-  }
-  return bytes;
 }

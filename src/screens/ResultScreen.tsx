@@ -25,7 +25,7 @@ import {
 } from '../services/diagnosisService';
 import { saveDiagnosis, markDiagnosisSynced } from '../services/databaseService';
 import { uploadDiagnosis } from '../services/cloudService';
-import { composeGradCamOverlay } from '../services/gradcamService';
+import { composeGradCamOverlay, type HeatmapStats } from '../services/gradcamService';
 
 /**
  * Muestra la imagen original, ejecuta el pipeline de IA local y permite persistir el diagnóstico.
@@ -44,6 +44,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
 
   const [explainOpen, setExplainOpen] = useState(false);
   const [heatmapUri, setHeatmapUri] = useState<string | null>(null);
+  const [heatmapStats, setHeatmapStats] = useState<HeatmapStats | null>(null);
   const [heatmapLoading, setHeatmapLoading] = useState(false);
   const [heatmapError, setHeatmapError] = useState<string | null>(null);
 
@@ -53,6 +54,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
     setSaved(false);
     setExplainOpen(false);
     setHeatmapUri(null);
+    setHeatmapStats(null);
     setHeatmapError(null);
     try {
       const allUris = [imageUri, ...(additionalUris ?? [])];
@@ -78,13 +80,15 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
     setHeatmapLoading(true);
     setHeatmapError(null);
     try {
-      const uri = await composeGradCamOverlay(imageUri, {
+      const result = await composeGradCamOverlay(imageUri, {
         label: analysis.label,
         confidence: analysis.confidence,
         probabilities: analysis.probabilities,
       });
-      setHeatmapUri(uri);
-    } catch {
+      setHeatmapUri(result.uri);
+      setHeatmapStats(result.stats);
+    } catch (err) {
+      console.error('[Heatmap] Error al generar mapa de calor:', err);
       setHeatmapError('No se pudo generar el mapa de calor. Intente de nuevo.');
     } finally {
       setHeatmapLoading(false);
@@ -169,8 +173,8 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
         ) : null}
 
         <Text style={[typography.caption, styles.explainIntro]}>
-          Tras el diagnóstico puede activarse la explicación visual: se muestra la foto con un
-          mapa de calor que resume qué regiones influyeron en la decisión del modelo.
+          Tras el diagnóstico podés activar el mapa de calor: muestra qué zonas de la hoja
+          influyeron en la decisión del modelo.
         </Text>
 
         {/* Estado: cargando */}
@@ -216,16 +220,16 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
               onPress={toggleExplain}
               accessibilityRole="button"
               accessibilityLabel={
-                explainOpen ? 'Ocultar explicación por mapa de calor' : 'Ver explicación por mapa de calor'
+                explainOpen ? 'Ocultar mapa de calor' : 'Ver mapa de calor'
               }
             >
               <MaterialCommunityIcons
-                name={explainOpen ? 'eye-off-outline' : 'eye-outline'}
+                name={explainOpen ? 'eye-off-outline' : 'thermometer'}
                 size={20}
                 color={colors.primaryDark}
               />
               <Text style={[typography.button, styles.explainBtnTxt]}>
-                {explainOpen ? 'Ocultar explicación IA' : 'Ver explicación IA'}
+                {explainOpen ? 'Ocultar mapa de calor' : 'Ver mapa de calor'}
               </Text>
             </TouchableOpacity>
             <HeatmapViewer
@@ -234,6 +238,8 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
               heatmapUri={heatmapUri}
               isLoading={heatmapLoading}
               errorMessage={heatmapError}
+              stats={heatmapStats}
+              label={analysis?.label}
             />
           </>
         ) : null}

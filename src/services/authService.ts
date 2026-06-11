@@ -1,22 +1,85 @@
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
-import { auth } from '../config/firebase';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const USERS_KEY = '@guardian_users';
+const SESSION_KEY = '@guardian_session';
+
+export interface LocalUser {
+  uid: string;
+  email: string;
+  displayName: string | null;
+}
+
+interface StoredUser extends LocalUser {
+  password: string;
+}
+
+type UserChangeListener = (user: LocalUser | null) => void;
+let _listener: UserChangeListener | null = null;
+
+export function onLocalAuthStateChanged(callback: UserChangeListener): () => void {
+  _listener = callback;
+  AsyncStorage.getItem(SESSION_KEY)
+    .then((raw) => {
+      try {
+        callback(raw ? (JSON.parse(raw) as LocalUser) : null);
+      } catch {
+        callback(null);
+      }
+    })
+    .catch(() => callback(null));
+  return () => {
+    _listener = null;
+  };
+}
+
+async function notifyListener(): Promise<void> {
+  if (!_listener) return;
+  const raw = await AsyncStorage.getItem(SESSION_KEY);
+  _listener(raw ? (JSON.parse(raw) as LocalUser) : null);
+}
 
 export async function register(email: string, password: string, name: string): Promise<void> {
-  const credential = await createUserWithEmailAndPassword(auth, email, password);
-  await updateProfile(credential.user, { displayName: name });
+  if (password.length < 6) throw { code: 'auth/weak-password' };
+
+  const raw = await AsyncStorage.getItem(USERS_KEY);
+  const users: StoredUser[] = raw ? (JSON.parse(raw) as StoredUser[]) : [];
+
+  if (users.find((u) => u.email.toLowerCase() === email.toLowerCase())) {
+    throw { code: 'auth/email-already-in-use' };
+  }
+
+  const newUser: StoredUser = {
+    uid: `local_${Date.now()}`,
+    email,
+    password,
+    displayName: name,
+  };
+
+  users.push(newUser);
+  await AsyncStorage.setItem(USERS_KEY, JSON.stringify(users));
+
+  const session: LocalUser = { uid: newUser.uid, email, displayName: name };
+  await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  await notifyListener();
 }
 
 export async function login(email: string, password: string): Promise<void> {
-  await signInWithEmailAndPassword(auth, email, password);
+  const raw = await AsyncStorage.getItem(USERS_KEY);
+  const users: StoredUser[] = raw ? (JSON.parse(raw) as StoredUser[]) : [];
+
+  const user = users.find(
+    (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password,
+  );
+  if (!user) throw { code: 'auth/invalid-credential' };
+
+  const session: LocalUser = { uid: user.uid, email: user.email, displayName: user.displayName };
+  await AsyncStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  await notifyListener();
 }
 
 export async function logout(): Promise<void> {
-  await signOut(auth);
+  await AsyncStorage.removeItem(SESSION_KEY);
+  await notifyListener();
 }
 
 export function getAuthErrorMessage(code: string): string {

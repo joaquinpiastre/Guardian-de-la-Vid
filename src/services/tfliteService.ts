@@ -84,6 +84,7 @@ export function __resetNativeModelCacheForTests(): void {
  * Predicción simulada (fallback offline cuando TFLite nativo no está disponible).
  */
 export async function simulatePrediction(_processedImageUri: string): Promise<TflitePrediction> {
+  console.info('[TFLite] SIMULACIÓN activa — no hay inferencia real. Usá `npx expo run:android` para TFLite nativo.');
   await new Promise((r) => setTimeout(r, 450));
 
   const raw = CLASS_LABELS.map(() => Math.random() * 0.85 + 0.05);
@@ -128,6 +129,12 @@ export async function runModelInferenceFromTensor(
       throw new Error('El modelo no devolvió tensores de salida.');
     }
     const probs = new Float32Array(first);
+    // Log de diagnóstico: muestra la distribución real del modelo
+    const probArr = Array.from(probs);
+    console.info(
+      '[TFLite Real] probs:',
+      probArr.map((p, i) => `${CLASS_LABELS[i]}=${(p * 100).toFixed(1)}%`).join(' | '),
+    );
     return softmaxVectorToPrediction(probs);
   } catch (e) {
     console.warn('[Guardián de la Vid] Error en inferencia TFLite; usando simulación.', e);

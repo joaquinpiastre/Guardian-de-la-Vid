@@ -1,8 +1,10 @@
-import { registerRootComponent } from 'expo';
+// Polyfill Buffer para Hermes (React Native): jpeg-js lo usa al codificar imágenes.
+// Debe estar antes de cualquier otro import.
+import { Buffer } from 'buffer';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+(global as any).Buffer = (global as any).Buffer ?? Buffer;
 
+import { registerRootComponent } from 'expo';
 import App from './App';
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => App);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
 registerRootComponent(App);

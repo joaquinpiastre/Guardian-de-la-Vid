@@ -3,10 +3,15 @@ import type { ConfidenceCategory } from '../types/diagnosis';
 /**
  * Reglas de interpretación de la confianza del modelo (especificación de la tesis).
  * Los umbrales se aplican sobre el porcentaje [0, 100].
+ *
+ * Calibrados para un modelo MobileNetV2 entrenado con label_smoothing=0.05:
+ * - Con smoothing 0.05 y 4 clases la confianza máxima teórica es ~0.9625.
+ * - HIGH ≥ 75 → diagnóstico confiable (softmax dominante claro).
+ * - MID ≥ 55 → diagnóstico probable (clase lidera con diferencia visible).
+ * - < 55 → no concluyente (distribución casi uniforme o imagen problemática).
  */
-
-const THRESHOLD_HIGH = 85;
-const THRESHOLD_MID = 65;
+const THRESHOLD_HIGH = 75;
+const THRESHOLD_MID = 55;
 
 /**
  * Devuelve la etiqueta de fiabilidad según el porcentaje de confianza.

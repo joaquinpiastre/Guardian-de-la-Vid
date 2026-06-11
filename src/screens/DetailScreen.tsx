@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ImagePreview } from '../components/ImagePreview';
@@ -74,7 +74,7 @@ export function DetailScreen({ route }: DetailScreenProps) {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[typography.caption, styles.date]}>{formatDate(row.createdAt)}</Text>
         <ImagePreview uri={row.imageUri} maxHeight={280} />
         <DiseaseBadge label={row.label} />
@@ -95,7 +95,7 @@ export function DetailScreen({ route }: DetailScreenProps) {
           <MaterialCommunityIcons name="shield-alert-outline" size={20} color={colors.textMuted} />
           <Text style={[typography.caption, styles.disclaimerTxt]}>{DISCLAIMER_ORIENTATIVE}</Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }

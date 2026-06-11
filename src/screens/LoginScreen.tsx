@@ -16,12 +16,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, radii, spacing, typography } from '../constants/theme';
 import { login, register, getAuthErrorMessage } from '../services/authService';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * Pantalla de acceso: alterná entre Login y Registro con un solo botón.
  * También permite continuar sin cuenta (uso offline puro).
  */
 export function LoginScreen() {
+  const { enterGuestMode } = useAuth();
   const [isRegistering, setIsRegistering] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -183,13 +185,20 @@ export function LoginScreen() {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* Modo offline */}
-          <View style={styles.offlineSection}>
-            <MaterialCommunityIcons name="cloud-off-outline" size={18} color={colors.textMuted} />
-            <Text style={[typography.caption, styles.offlineTxt]}>
-              La IA funciona 100% sin internet. Sin cuenta, los diagnósticos se guardan solo en el dispositivo.
-            </Text>
-          </View>
+          {/* Modo offline / sin cuenta */}
+          <TouchableOpacity
+            style={styles.guestBtn}
+            onPress={enterGuestMode}
+            disabled={loading}
+            accessibilityRole="button"
+            accessibilityLabel="Continuar sin cuenta"
+          >
+            <MaterialCommunityIcons name="cloud-off-outline" size={18} color={colors.primary} />
+            <Text style={[typography.button, styles.guestBtnTxt]}>Continuar sin cuenta</Text>
+          </TouchableOpacity>
+          <Text style={[typography.caption, styles.offlineTxt]}>
+            Sin cuenta los diagnósticos se guardan solo en el dispositivo, sin sincronización en la nube.
+          </Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -309,19 +318,24 @@ const styles = StyleSheet.create({
   dividerTxt: {
     color: colors.textMuted,
   },
-  offlineSection: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    backgroundColor: colors.white,
-    borderRadius: radii.md,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   offlineTxt: {
-    flex: 1,
     color: colors.textMuted,
     lineHeight: 19,
+    textAlign: 'center',
+  },
+  guestBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 50,
+    borderRadius: radii.md,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.white,
+  },
+  guestBtnTxt: {
+    color: colors.primary,
+    fontSize: 15,
   },
 });

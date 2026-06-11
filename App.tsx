@@ -35,7 +35,7 @@ function LoadingScreen() {
  * También escucha cambios de conectividad para sincronizar diagnósticos pendientes.
  */
 function AppNavigator() {
-  const { user, loading } = useAuth();
+  const { user, loading, isGuest, exitGuestMode } = useAuth();
 
   useEffect(() => {
     void initDatabase();
@@ -80,8 +80,8 @@ function AppNavigator() {
           contentStyle: { backgroundColor: colors.background },
         }}
       >
-        {!user ? (
-          // ── Sin sesión: sólo pantalla de login ──
+        {!user && !isGuest ? (
+          // ── Sin sesión y sin modo invitado: solo pantalla de login ──
           <Stack.Screen
             name="Login"
             component={LoginScreen}
@@ -106,9 +106,9 @@ function AppNavigator() {
                 ),
                 headerLeft: () => (
                   <TouchableOpacity
-                    onPress={() => void logout()}
+                    onPress={() => { if (isGuest) exitGuestMode(); else void logout(); }}
                     style={{ paddingHorizontal: 8 }}
-                    accessibilityLabel="Cerrar sesión"
+                    accessibilityLabel={isGuest ? 'Volver al inicio de sesión' : 'Cerrar sesión'}
                   >
                     <MaterialCommunityIcons name="logout" size={24} color={colors.white} />
                   </TouchableOpacity>
