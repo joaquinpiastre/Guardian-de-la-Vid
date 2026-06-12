@@ -80,4 +80,6 @@ export interface DiagnosisAnalysisResult {
   processedImageUri: string;
   /** Calidad de la imagen analizada; undefined si no se pudo calcular. */
   qualityInfo?: ImageQualityInfo;
+  /** True si el resultado viene del fallback simulado (sin modelo TFLite real). */
+  isSimulated?: boolean;
 }

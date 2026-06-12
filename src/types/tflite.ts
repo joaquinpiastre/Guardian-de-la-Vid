@@ -11,4 +11,6 @@ export interface TflitePrediction {
   confidence: number;
   /** Distribución completa (misma longitud y orden que las clases del modelo) */
   probabilities: number[];
+  /** True si esta predicción viene del fallback simulado (sin modelo TFLite real). */
+  isSimulated?: boolean;
 }

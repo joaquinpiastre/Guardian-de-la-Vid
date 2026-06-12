@@ -25,6 +25,12 @@ export function applySceneVegetationGate(prediction: TflitePrediction, avgExcess
   const suspiciousHealthy =
     prediction.label === 'Hoja sana' && avgExcessGreen < MIN_VEGETATION_FOR_HEALTHY_LEAF;
 
+  console.info(
+    `[SceneGate] avgExcessGreen=${avgExcessGreen.toFixed(4)} | tooLittleGreen=${tooLittleGreen} | ` +
+      `label="${prediction.label}" | suspiciousHealthy=${suspiciousHealthy} | ` +
+      `gateApplied=${tooLittleGreen || suspiciousHealthy}`,
+  );
+
   if (!tooLittleGreen && !suspiciousHealthy) {
     return prediction;
   }
@@ -35,5 +41,6 @@ export function applySceneVegetationGate(prediction: TflitePrediction, avgExcess
     label: 'No es hoja de vid',
     confidence,
     probabilities: prediction.probabilities,
+    isSimulated: prediction.isSimulated,
   };
 }

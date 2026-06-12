@@ -83,6 +83,7 @@ function buildPipelineResult(
     lowConfidenceHint,
     isEnsemble,
     imageCount,
+    isSimulated: gated.isSimulated,
   };
 }
 
@@ -140,6 +141,7 @@ export async function runEnsembleDiagnosis(
     label: MODEL_LABELS[bestIdx] ?? 'Hoja sana',
     confidence: avgProbs[bestIdx]!,
     probabilities: avgProbs,
+    isSimulated: analyses.some((a) => a.modelOut.isSimulated),
   };
 
   // Gating con la media del índice de verdor

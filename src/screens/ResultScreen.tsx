@@ -199,6 +199,17 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
           </View>
         ) : null}
 
+        {/* Aviso: resultado simulado (sin modelo TFLite real) */}
+        {!loading && !error && analysis?.isSimulated ? (
+          <View style={styles.simulatedWarning}>
+            <MaterialCommunityIcons name="alert-circle" size={18} color={colors.white} />
+            <Text style={[typography.caption, styles.simulatedWarningText]}>
+              [SIMULADO] Este resultado es ALEATORIO: no hay modelo TFLite real cargado.
+              Compilá la app con `npx expo run:android` (o iOS) para un diagnóstico real.
+            </Text>
+          </View>
+        ) : null}
+
         {/* Advertencia de calidad de imagen */}
         {!loading && !error && analysis?.qualityInfo?.warning ? (
           <View style={styles.qualityWarning}>
@@ -303,6 +314,20 @@ const styles = StyleSheet.create({
   },
   ensembleBadgeText: {
     color: colors.primaryDark,
+    fontWeight: '600',
+  },
+  simulatedWarning: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    backgroundColor: colors.danger,
+    borderRadius: radii.sm,
+    padding: spacing.sm,
+  },
+  simulatedWarningText: {
+    flex: 1,
+    color: colors.white,
+    lineHeight: 19,
     fontWeight: '600',
   },
   qualityWarning: {

@@ -84,7 +84,10 @@ export function __resetNativeModelCacheForTests(): void {
  * Predicción simulada (fallback offline cuando TFLite nativo no está disponible).
  */
 export async function simulatePrediction(_processedImageUri: string): Promise<TflitePrediction> {
-  console.info('[TFLite] SIMULACIÓN activa — no hay inferencia real. Usá `npx expo run:android` para TFLite nativo.');
+  console.error(
+    '[Guardián de la Vid] SIMULACIÓN ACTIVA — el resultado es ALEATORIO, no proviene del modelo TFLite. ' +
+      'Usá `npx expo prebuild` + `npx expo run:android` (o iOS) para inferencia real.',
+  );
   await new Promise((r) => setTimeout(r, 450));
 
   const raw = CLASS_LABELS.map(() => Math.random() * 0.85 + 0.05);
@@ -105,6 +108,7 @@ export async function simulatePrediction(_processedImageUri: string): Promise<Tf
     label,
     confidence,
     probabilities,
+    isSimulated: true,
   };
 }
 
