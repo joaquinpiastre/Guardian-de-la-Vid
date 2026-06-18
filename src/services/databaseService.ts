@@ -2,7 +2,7 @@ import * as SQLite from 'expo-sqlite';
 import { Directory, File, Paths } from 'expo-file-system';
 
 import { SQL_CREATE_DIAGNOSES, SQL_MIGRATIONS, TABLE_DIAGNOSES } from '../database/schema';
-import type { Diagnosis, DiseaseLabel, SyncStatus } from '../types/diagnosis';
+import type { Diagnosis, DiseaseLabel, SyncStatus, WeatherInfo } from '../types/diagnosis';
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
@@ -57,6 +57,18 @@ export async function persistDiagnosisImage(sourceUri: string, id: string): Prom
   }
 }
 
+function parseWeather(row: Record<string, unknown>): WeatherInfo | undefined {
+  if (row.latitude == null || row.longitude == null) return undefined;
+  return {
+    latitude: Number(row.latitude),
+    longitude: Number(row.longitude),
+    temperatureC: Number(row.weatherTempC),
+    humidityPercent: Number(row.weatherHumidity),
+    conditionText: String(row.weatherCondition ?? 'Condición desconocida'),
+    observedAt: String(row.weatherObservedAt ?? ''),
+  };
+}
+
 function parseRow(row: Record<string, unknown>): Diagnosis {
   return {
     id: String(row.id),
@@ -69,6 +81,7 @@ function parseRow(row: Record<string, unknown>): Diagnosis {
     userId: row.userId != null ? String(row.userId) : undefined,
     syncStatus: (row.syncStatus as SyncStatus | null) ?? 'local',
     cloudId: row.cloudId != null ? String(row.cloudId) : undefined,
+    weather: parseWeather(row),
   };
 }
 
@@ -81,12 +94,19 @@ export async function saveDiagnosis(
   const persistentUri = await persistDiagnosisImage(input.imageUri, id);
   const syncStatus: SyncStatus = input.syncStatus ?? 'local';
   const userId = input.userId ?? null;
+  const weather = input.weather ?? null;
 
   await db.runAsync(
     `INSERT INTO ${TABLE_DIAGNOSES}
-       (id, imageUri, label, confidence, riskLevel, recommendation, createdAt, userId, syncStatus)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [id, persistentUri, input.label, input.confidence, input.riskLevel, input.recommendation, createdAt, userId, syncStatus],
+       (id, imageUri, label, confidence, riskLevel, recommendation, createdAt, userId, syncStatus,
+        latitude, longitude, weatherTempC, weatherHumidity, weatherCondition, weatherObservedAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id, persistentUri, input.label, input.confidence, input.riskLevel, input.recommendation,
+      createdAt, userId, syncStatus,
+      weather?.latitude ?? null, weather?.longitude ?? null, weather?.temperatureC ?? null,
+      weather?.humidityPercent ?? null, weather?.conditionText ?? null, weather?.observedAt ?? null,
+    ],
   );
 
   return {
@@ -99,6 +119,7 @@ export async function saveDiagnosis(
     createdAt,
     userId: input.userId,
     syncStatus,
+    weather: input.weather,
   };
 }
 

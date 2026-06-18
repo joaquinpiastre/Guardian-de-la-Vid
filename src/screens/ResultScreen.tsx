@@ -26,6 +26,8 @@ import {
 import { saveDiagnosis, markDiagnosisSynced } from '../services/databaseService';
 import { uploadDiagnosis } from '../services/cloudService';
 import { composeGradCamOverlay, type HeatmapStats } from '../services/gradcamService';
+import { getCurrentWeatherSnapshot } from '../services/weatherService';
+import type { WeatherInfo } from '../types/diagnosis';
 
 /**
  * Muestra la imagen original, ejecuta el pipeline de IA local y permite persistir el diagnóstico.
@@ -41,6 +43,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
   const [analysis, setAnalysis] = useState<DiagnosisPipelineResult | null>(null);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [weather, setWeather] = useState<WeatherInfo | null>(null);
 
   const [explainOpen, setExplainOpen] = useState(false);
   const [heatmapUri, setHeatmapUri] = useState<string | null>(null);
@@ -56,6 +59,8 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
     setHeatmapUri(null);
     setHeatmapStats(null);
     setHeatmapError(null);
+    setWeather(null);
+    void getCurrentWeatherSnapshot().then(setWeather);
     try {
       const allUris = [imageUri, ...(additionalUris ?? [])];
       const result = isEnsemble
@@ -121,6 +126,7 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
         recommendation: analysis.recommendation,
         userId: user?.uid,
         syncStatus,
+        weather: weather ?? undefined,
       });
 
       if (user && isOnline) {
@@ -222,6 +228,17 @@ export function ResultScreen({ navigation, route }: ResultScreenProps) {
 
         {/* Resultado principal */}
         {!loading && !error && analysis ? <DiagnosisCard analysis={analysis} /> : null}
+
+        {/* Clima/ubicación capturados para el registro */}
+        {!loading && !error && analysis && weather ? (
+          <View style={styles.weatherBadge}>
+            <MaterialCommunityIcons name="thermometer" size={16} color={colors.primaryDark} />
+            <Text style={[typography.caption, styles.weatherBadgeText]}>
+              {weather.temperatureC.toFixed(0)}°C · {weather.humidityPercent.toFixed(0)}% humedad ·{' '}
+              {weather.conditionText} (se guarda junto al diagnóstico)
+            </Text>
+          </View>
+        ) : null}
 
         {/* Explicación Grad-CAM */}
         {!loading && !error && analysis ? (
@@ -344,6 +361,19 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#92400E',
     lineHeight: 19,
+  },
+  weatherBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.primaryMuted,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 6,
+  },
+  weatherBadgeText: {
+    flex: 1,
+    color: colors.primaryDark,
   },
   explainBtn: {
     backgroundColor: colors.primaryMuted,

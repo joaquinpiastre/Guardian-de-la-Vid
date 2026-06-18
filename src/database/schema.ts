@@ -21,7 +21,13 @@ CREATE TABLE IF NOT EXISTS ${TABLE_DIAGNOSES} (
   createdAt TEXT NOT NULL,
   userId TEXT,
   syncStatus TEXT DEFAULT 'local',
-  cloudId TEXT
+  cloudId TEXT,
+  latitude REAL,
+  longitude REAL,
+  weatherTempC REAL,
+  weatherHumidity REAL,
+  weatherCondition TEXT,
+  weatherObservedAt TEXT
 );
 `;
 
@@ -33,4 +39,10 @@ export const SQL_MIGRATIONS = [
   `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN userId TEXT`,
   `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN syncStatus TEXT DEFAULT 'local'`,
   `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN cloudId TEXT`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN latitude REAL`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN longitude REAL`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN weatherTempC REAL`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN weatherHumidity REAL`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN weatherCondition TEXT`,
+  `ALTER TABLE ${TABLE_DIAGNOSES} ADD COLUMN weatherObservedAt TEXT`,
 ];

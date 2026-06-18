@@ -47,6 +47,20 @@ export interface ImageQualityInfo {
 /** Estado de sincronización con la nube */
 export type SyncStatus = 'local' | 'pending' | 'synced';
 
+/**
+ * Clima y ubicación al momento del diagnóstico (Open-Meteo + GPS del dispositivo).
+ * `undefined`/ausente cuando el usuario no dio permiso de ubicación o no hubo internet.
+ */
+export interface WeatherInfo {
+  latitude: number;
+  longitude: number;
+  temperatureC: number;
+  humidityPercent: number;
+  conditionText: string;
+  /** ISO 8601 reportado por el servicio meteorológico. */
+  observedAt: string;
+}
+
 /** Registro almacenado en la base de datos local */
 export interface Diagnosis {
   id: string;
@@ -63,6 +77,8 @@ export interface Diagnosis {
   syncStatus?: SyncStatus;
   /** ID del documento en Firestore una vez sincronizado */
   cloudId?: string;
+  /** Clima/ubicación registrados al momento de guardar, si estuvieron disponibles. */
+  weather?: WeatherInfo;
 }
 
 /**

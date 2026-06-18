@@ -91,6 +91,24 @@ export function DetailScreen({ route }: DetailScreenProps) {
           <Text style={styles.meta}>Recomendación</Text>
           <Text style={[typography.body, styles.reco]}>{row.recommendation}</Text>
         </View>
+        {row.weather ? (
+          <View style={styles.block}>
+            <Text style={styles.meta}>Condiciones climáticas al momento</Text>
+            <View style={styles.weatherRow}>
+              <MaterialCommunityIcons name="thermometer" size={18} color={colors.primaryDark} />
+              <Text style={[typography.body, styles.weatherTxt]}>
+                {row.weather.temperatureC.toFixed(1)}°C
+              </Text>
+              <MaterialCommunityIcons name="water-percent" size={18} color={colors.primaryDark} />
+              <Text style={[typography.body, styles.weatherTxt]}>
+                {row.weather.humidityPercent.toFixed(0)}% humedad
+              </Text>
+            </View>
+            <Text style={[typography.body, styles.weatherCondition]}>
+              {row.weather.conditionText}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.disclaimer}>
           <MaterialCommunityIcons name="shield-alert-outline" size={20} color={colors.textMuted} />
           <Text style={[typography.caption, styles.disclaimerTxt]}>{DISCLAIMER_ORIENTATIVE}</Text>
@@ -148,6 +166,18 @@ const styles = StyleSheet.create({
   reco: {
     color: colors.text,
     lineHeight: 22,
+  },
+  weatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  weatherTxt: {
+    color: colors.text,
+    marginRight: 10,
+  },
+  weatherCondition: {
+    color: colors.textMuted,
   },
   disclaimer: {
     flexDirection: 'row',

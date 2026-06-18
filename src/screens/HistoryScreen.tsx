@@ -42,7 +42,10 @@ function escapeCsvField(value: string): string {
 }
 
 function buildCsvContent(items: Diagnosis[]): string {
-  const headers = ['ID', 'Fecha', 'Diagnóstico', 'Confianza (%)', 'Riesgo', 'Recomendación'];
+  const headers = [
+    'ID', 'Fecha', 'Diagnóstico', 'Confianza (%)', 'Riesgo', 'Recomendación',
+    'Temperatura (°C)', 'Humedad (%)', 'Clima',
+  ];
   const rows = items.map((item) => [
     item.id,
     item.createdAt,
@@ -50,6 +53,9 @@ function buildCsvContent(items: Diagnosis[]): string {
     (item.confidence * 100).toFixed(1),
     item.riskLevel,
     item.recommendation,
+    item.weather ? item.weather.temperatureC.toFixed(1) : '',
+    item.weather ? item.weather.humidityPercent.toFixed(0) : '',
+    item.weather?.conditionText ?? '',
   ]);
   const lines = [headers, ...rows].map((row) => row.map(escapeCsvField).join(','));
   return lines.join('\n');
@@ -153,6 +159,14 @@ export function HistoryScreen({ navigation }: HistoryScreenProps) {
           </View>
           <Text style={[typography.subtitle, styles.label]}>{item.label}</Text>
           <Text style={[typography.body, styles.conf]}>Confianza: {pct}%</Text>
+          {item.weather ? (
+            <View style={styles.weatherRow}>
+              <MaterialCommunityIcons name="thermometer" size={14} color={colors.textMuted} />
+              <Text style={[typography.caption, styles.weatherTxt]}>
+                {item.weather.temperatureC.toFixed(0)}°C · {item.weather.conditionText}
+              </Text>
+            </View>
+          ) : null}
           <Text style={[typography.caption, styles.detailLink]}>Ver detalle →</Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -290,6 +304,15 @@ const styles = StyleSheet.create({
   conf: {
     color: colors.text,
     marginTop: 4,
+  },
+  weatherRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  weatherTxt: {
+    color: colors.textMuted,
   },
   detailLink: {
     color: colors.primary,
